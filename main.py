@@ -1,18 +1,39 @@
-import os
+from pprint import pprint
 
-from langchain import OpenAI
-from langchain.document_loaders import TextLoader
-from langchain.indexes import VectorstoreIndexCreator
+from langchain import ElasticVectorSearch, OpenAI
+from langchain.chains.question_answering import load_qa_chain
+from langchain.document_loaders import DirectoryLoader
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
 
-loaders = []
-for root, _, files in os.walk("./data", topdown=False):
-    for name in files:
-        file_path = os.path.join(root, name)
-        loaders.append(TextLoader(file_path))
+elasticsearch_url = "http://localhost:9200"
+index_name = "menus"
+embeddings = OpenAIEmbeddings()
 
-index = VectorstoreIndexCreator().from_loaders(loaders=loaders)
 
-query = "var kan jag äta saffran rätt med ris som kostar mindre än 80. svara på svenska"
-res = index.query_with_sources(query, llm=OpenAI(temperature=0, model_name="gpt-3.5-turbo"))
+def create_get_index():
+    loader = DirectoryLoader("./data", glob="**/*.txt")
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+    docs = loader.load()
+    documents = text_splitter.split_documents(docs)
+    if len(documents) == 0:
+        raise ValueError("No documents")
+    return ElasticVectorSearch.from_documents(documents, embeddings, elasticsearch_url=elasticsearch_url,
+                                              index_name=index_name)
 
-print(res)
+
+def get_index():
+    return ElasticVectorSearch(elasticsearch_url=elasticsearch_url, index_name=index_name, embedding=embeddings)
+
+
+index = get_index()
+query = "var kan jag äta saffran rätt"
+docs = index.similarity_search(query)
+pprint(docs)
+
+llm = OpenAI(temperature=0)
+chain = load_qa_chain(llm, chain_type="stuff")
+
+result = chain({"input_documents": docs, "question": query}, return_only_outputs=True)
+pprint(result)
+

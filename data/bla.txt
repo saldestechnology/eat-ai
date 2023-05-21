@@ -1,0 +1,1 @@
+For question answering over many documents, you almost always want to create an index over the data. This can be used to smartly access the most relevant documents for a given question, allowing you to avoid having to pass all the documents to the LLM (saving you time and money).
