@@ -27,11 +27,11 @@ def get_index():
 
 
 index = get_index()
-query = "var kan jag äta saffran rätt"
+query = "var kan jag äta saffran rätt som kostar max 80"
 docs = index.similarity_search(query)
 pprint(docs)
 
-llm = OpenAI(temperature=0)
+llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo")
 chain = load_qa_chain(llm, chain_type="stuff")
 
 result = chain({"input_documents": docs, "question": query}, return_only_outputs=True)
