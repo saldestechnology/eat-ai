@@ -27,7 +27,8 @@ def get_index():
 
 
 index = get_index()
-query = "var kan jag äta saffran rätt som kostar max 80"
+# query = "var kan jag äta saffran rätt som kostar max 80"
+query = "var kan jag äta indiskt i stockholm"
 docs = index.similarity_search(query)
 pprint(docs)
 
