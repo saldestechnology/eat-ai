@@ -1,40 +1,39 @@
 from pprint import pprint
 
-from langchain import ElasticVectorSearch, OpenAI
-from langchain.chains.question_answering import load_qa_chain
+from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import DirectoryLoader
+from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
-from langchain.text_splitter import CharacterTextSplitter
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.llms import OpenAI
+from langchain.chains import VectorDBQA
 
-elasticsearch_url = "http://localhost:9200"
-index_name = "menus"
+# Supplying a persist_directory will store the embeddings on disk
+persist_directory = "db"
+
 embeddings = OpenAIEmbeddings()
 
 
 def create_get_index():
     loader = DirectoryLoader("./data", glob="**/*.txt")
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
     docs = loader.load()
     documents = text_splitter.split_documents(docs)
     if len(documents) == 0:
         raise ValueError("No documents")
-    return ElasticVectorSearch.from_documents(documents, embeddings, elasticsearch_url=elasticsearch_url,
-                                              index_name=index_name)
+    return Chroma.from_documents(
+        documents=documents, embedding=embeddings, persist_directory=persist_directory
+    )
 
 
 def get_index():
-    return ElasticVectorSearch(elasticsearch_url=elasticsearch_url, index_name=index_name, embedding=embeddings)
+    return Chroma(persist_directory=persist_directory, embedding_function=embeddings)
 
 
-index = get_index()
-# query = "var kan jag äta saffran rätt som kostar max 80"
-query = "var kan jag äta indiskt i stockholm"
-docs = index.similarity_search(query)
-pprint(docs)
+vectordb = create_get_index()
 
-llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo")
-chain = load_qa_chain(llm, chain_type="stuff")
+llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
+qa = VectorDBQA.from_chain_type(llm=llm, chain_type="stuff", vectorstore=vectordb)
 
-result = chain({"input_documents": docs, "question": query}, return_only_outputs=True)
+result = qa("var kan jag äta indiskt i stockholm")
 pprint(result)
-
