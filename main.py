@@ -6,7 +6,7 @@ from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.llms import OpenAI
-from langchain.chains import VectorDBQA
+from langchain.chains import RetrievalQA
 
 # Supplying a persist_directory will store the embeddings on disk
 persist_directory = "db"
@@ -33,7 +33,9 @@ def get_index():
 vectordb = get_index()
 
 llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
-qa = VectorDBQA.from_chain_type(llm=llm, chain_type="stuff", vectorstore=vectordb)
+qa = RetrievalQA.from_chain_type(
+    llm=OpenAI(), chain_type="stuff", retriever=vectordb.as_retriever()
+)
 
-result = qa("var kan jag äta indiskt i stockholm")
+result = qa("var kan jag äta röd curry i stockholm")
 pprint(result)
