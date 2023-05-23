@@ -1,6 +1,6 @@
 from pprint import pprint
 import os
-from langchain import OpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.document_loaders import DirectoryLoader
 from langchain.embeddings import OpenAIEmbeddings
@@ -41,7 +41,7 @@ query = "vart kan jag äta indiskt i stockholm"
 docs = index.similarity_search(query)
 pprint(docs)
 
-llm = OpenAI(temperature=0, model_name="gpt-3.5-turbo")
+llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
 chain = load_qa_chain(llm, chain_type="stuff")
 
 result = chain({"input_documents": docs, "question": query}, return_only_outputs=True)
