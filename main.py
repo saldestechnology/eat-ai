@@ -30,7 +30,7 @@ def get_index():
     return Chroma(persist_directory=persist_directory, embedding_function=embeddings)
 
 
-vectordb = create_get_index()
+vectordb = get_index()
 
 llm = ChatOpenAI(temperature=0, model_name="gpt-3.5-turbo")
 qa = VectorDBQA.from_chain_type(llm=llm, chain_type="stuff", vectorstore=vectordb)
